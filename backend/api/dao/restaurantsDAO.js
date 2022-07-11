@@ -1,23 +1,22 @@
-import { query } from "express"
-
+import mongodb from "mongodb"
+const ObjectId = mongodb.ObjectID
 let restaurants
 
-export default class RestuarantsDAO {
-    static async injectDB(conn) {
-        if (restaurants) {
-            return
-        }
-        try {
-            restaurants = await conn.db(process.env.RESTREVIEWS_NS).collection("restaurants")
-        } catch (e) {
-            console.error(
-                "Error connection to MongoDB:" + e.message
-            )
-        }
+export default class RestaurantsDAO {
+  static async injectDB(conn) {
+    if (restaurants) {
+      return
     }
-}
+    try {
+      restaurants = await conn.db(process.env.RESTREVIEWS_NS).collection("restaurants")
+    } catch (e) {
+      console.error(
+        `Unable to establish a collection handle in restaurantsDAO: ${e}`,
+      )
+    }
+  }
 
-static async getRestaurants({
+  static async getRestaurants({
     filters = null,
     page = 0,
     restaurantsPerPage = 20,
@@ -34,27 +33,29 @@ static async getRestaurants({
     }
 
     let cursor
-
+    
     try {
-        cursor = await restaurants
+      cursor = await restaurants
         .find(query)
     } catch (e) {
-            console.error(`Unable to issue find command, ${e}`)
-            return { restaurantsList: [], totalNumRestaurants: 0 }
+      console.error(`Unable to issue find command, ${e}`)
+      return { restaurantsList: [], totalNumRestaurants: 0 }
     }
 
     const displayCursor = cursor.limit(restaurantsPerPage).skip(restaurantsPerPage * page)
 
     try {
-        const restaurantsList = await displayCursor.toArray()
-        const totalNumRestaurants = await restaurants.countDocuments(query)
-  
-        return { restaurantsList, totalNumRestaurants }
-      } catch (e) {
-        console.error(
-          `Unable to convert cursor to array or problem counting documents, ${e}`,
-        )
-        return { restaurantsList: [], totalNumRestaurants: 0 }
-      }
-      
-} 
+      const restaurantsList = await displayCursor.toArray()
+      const totalNumRestaurants = await restaurants.countDocuments(query)
+
+      return { restaurantsList, totalNumRestaurants }
+    } catch (e) {
+      console.error(
+        `Unable to convert cursor to array or problem counting documents, ${e}`,
+      )
+      return { restaurantsList: [], totalNumRestaurants: 0 }
+    }
+  }
+}
+
+
